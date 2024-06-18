@@ -1,5 +1,10 @@
 package org.playground;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
@@ -64,8 +69,40 @@ public class vt {
         */
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void utilize() throws InterruptedException {
+        Set<String> poolNames = ConcurrentHashMap.newKeySet();
+        Set<String> threadNames = ConcurrentHashMap.newKeySet();
 
-        hopping();
+        List<Thread> threads = IntStream.range(0, 1_000_000).mapToObj(i -> Thread.ofVirtual().unstarted(() -> {
+            poolNames.add(readPoolName());
+            threadNames.add(readWorkerName());
+        })).toList();
+
+        threads.forEach(Thread::start);
+        for (Thread t: threads) {
+            t.join();
+        }
+
+        System.out.println("pool count: " + poolNames.size());
+        System.out.println("worker count: " + threadNames.size());
+    }
+
+    public static String readPoolName() {
+        String threadName = Thread.currentThread().toString();
+        int i1 = threadName.indexOf("ForkJoinPool");
+        int i2 = threadName.indexOf("worker");
+        return threadName.substring(i1, i2);
+    }
+
+    public static String readWorkerName() {
+        String threadName = Thread.currentThread().toString();
+        int i1 = threadName.indexOf("worker");
+        return threadName.substring(i1);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Instant startTime = Instant.now();
+        utilize();
+        System.out.println("Completed in: " + Duration.between(startTime, Instant.now()).toMillis());
     }
 }
