@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+//https://cowtowncoder.medium.com/reading-csv-with-jackson-c4e74a15ddc1
 
 @JsonPropertyOrder({"employeeId", "firstName", "lastName", "email", "phoneNumber", "hireDate", "jobId", "salary", "managerId", "departmentName"})
 @Data
