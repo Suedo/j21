@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -84,5 +85,101 @@ public class JavaStreamsTest {
                 .forEach(System.out::println);
     }
 
+    /*
+    11. Find the department with the highest number of employees.
+
+        -- m1. when join not needed
+        SELECT e.department_id , COUNT(e.employee_id) count  from employees e
+        group by e.department_id
+        order by count DESC limit 1;
+
+        -- m2. when join is needed
+        SELECT d.department_id , d.department_name , j.count from departments d
+        join (
+            SELECT e.department_id d_id , COUNT(e.employee_id) count  from employees e
+            group by e.department_id order by count desc limit 1
+        ) j on d.department_id  = j.d_id;
+
+     */
+    @Test
+    void test11() {
+
+        employees.stream()
+                .collect(groupingBy(Employee::getDepartmentName, counting()))
+                .entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .ifPresentOrElse(
+                        entry -> System.out.printf("Department with most employees: %s, employee count: %s", entry.getKey(), entry.getValue()),
+                        () -> System.out.println("nothing found")
+                );
+    }
+
+    /*
+    -- 12. List the employees who have been hired for more than 3 years.
+
+            select e.employee_id , e.hire_date from employees e
+            WHERE hire_date <= DATE_SUB(CURDATE(), INTERVAL 3 year);
+    */
+    @Test
+    void test12() {
+        employees.stream()
+                .filter(employee -> employee.getHireDate().isBefore(LocalDate.now().minusYears(3)))
+                .forEach(System.out::println);
+    }
+
+/*
+    -- 13. Retrieve the names of employees who do not work in 'Marketing' or 'Finance' departments.
+
+    SELECT * from employees e join departments d on e.department_id  = d.department_id
+    WHERE d.department_name not in ('Marketing', 'Finance');
+ */
+
+    @Test
+    void test13() {
+        List<String> whiteList = List.of("Marketing", "Finance");
+        employees.stream()
+                .filter(employee -> !whiteList.contains(employee.getDepartmentName()))
+                .map(Employee::getEmployeeId)
+                .forEach(System.out::println);
+    }
+
+/*
+    -- 14. Find the number of employees hired each year.
+
+        SELECT YEAR(hire_date) hire_year, COUNT(e.employee_id) count
+        from employees e
+        group by YEAR(hire_date)
+        ORDER by hire_year;
+*/
+
+    @Test
+    void test14() {
+        employees.stream()
+                .collect(groupingBy(
+                        employee -> employee.getHireDate().getYear(),
+                        counting()
+                )).forEach((year, count) -> System.out.printf("Year: %s, hires: %s\n", year, count));
+    }
+
+/*
+    -- 15. List the employees whose salary is within 10% of the highest salary in the company.
+
+    SELECT * from employees
+    WHERE salary >= (SELECT MAX(salary) * 0.9 from employees)
+ */
+
+    @Test
+    void test15() {
+        var maxSalary = employees.stream()
+                .map(Employee::getSalary)
+                .max(Double::compareTo).orElse(0.0);
+
+        System.out.println("90% of Max Salary: " + maxSalary * 0.9);
+
+        employees.stream()
+                .filter(employee -> employee.getSalary() >= maxSalary * 0.9)
+                .forEach(employee -> System.out.printf("employee: %s %s, salary: %s\n", employee.getFirstName(), employee.getLastName(), employee.getSalary()));
+
+    }
 
 }
