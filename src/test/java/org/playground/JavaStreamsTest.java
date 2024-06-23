@@ -182,4 +182,21 @@ public class JavaStreamsTest {
 
     }
 
+    /*
+        -- 17. Find the top 3 highest-paid employees in each department.
+            WITH ranked AS (
+                SELECT employee_id, first_name, last_name, department_id, salary,
+                    DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
+                FROM employees
+            )
+            SELECT employee_id, first_name, last_name, department_id, salary, salary_rank
+            FROM ranked
+            WHERE salary_rank <= 3;
+     */
+    @Test
+    void test17() {
+
+    }
+
+
 }
