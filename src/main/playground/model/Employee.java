@@ -3,6 +3,7 @@ package model;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 @JsonPropertyOrder({"employeeId", "firstName", "lastName", "email", "phoneNumber", "hireDate", "jobId", "salary", "managerId", "departmentName"})
 @Data
 @NoArgsConstructor
+@ToString
 public class Employee {
     private int employeeId;
     private String firstName;

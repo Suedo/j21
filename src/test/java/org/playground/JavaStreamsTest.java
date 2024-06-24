@@ -1,7 +1,6 @@
 package org.playground;
 
 import model.Employee;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
@@ -9,8 +8,7 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.stream.Collectors.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -195,6 +193,61 @@ public class JavaStreamsTest {
      */
     @Test
     void test17() {
+
+        record RankedEmployee(Employee employee, Integer rank) {
+        }
+
+        // partition by dept, order by salary desc
+        Map<String, List<Employee>> employeesByDeptSortedBySalaryDesc = employees.stream()
+                .collect(groupingBy(
+                        Employee::getDepartmentName,
+                        collectingAndThen(
+                                toList(),   // how to collect
+                                list -> {   // what to do after collecting
+                                    // sort in descending order of salary
+                                    list.sort(Comparator.comparingDouble(Employee::getSalary).reversed());
+                                    return list;
+                                }
+                        )
+                ));
+
+
+        /*
+            we go from a Map<String, List<Employee>> to Map<String, List<RankedEmployee>>
+            very similar to our SQL, where the final projection is different than tha native projection from the table
+         */
+        Map<String, List<RankedEmployee>> rankedEmployeesByDept = employeesByDeptSortedBySalaryDesc.entrySet().stream()
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            // add rank
+                            AtomicInteger rank = new AtomicInteger(1);
+
+                            // create a new projection, with added field : rank
+                            return entry.getValue().stream()
+                                    .map(employee -> new RankedEmployee(employee, rank.getAndIncrement()))
+                                    .filter(rankedEmployee -> rankedEmployee.rank() <= 3) // top 3
+                                    .collect(toList());
+                            // new projection == new return type
+                        }
+                ));
+        System.out.println("Ranked Projection");
+        rankedEmployeesByDept
+                .forEach((key, value) -> System.out.printf("%s, %s\n",
+                        key,
+                        value.stream().map(re -> re.employee().getEmployeeId()).toList()));
+
+        /*
+            SIMPLER:
+            if just the answer is needed: top 3 salaried employee for each dept, all the above extra work
+            for creating `rankedEmployeesByDept` is not needed.
+         */
+        System.out.println("Simple Result");
+        employeesByDeptSortedBySalaryDesc
+                .forEach((key, value) -> System.out.printf("%s, %s\n",
+                        key,
+                        value.stream().limit(3).map(Employee::getEmployeeId).toList()));
+
 
     }
 
