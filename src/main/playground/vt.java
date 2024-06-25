@@ -1,5 +1,3 @@
-package org.playground;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
