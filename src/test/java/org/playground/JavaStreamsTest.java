@@ -4,11 +4,11 @@ import model.Employee;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Currency;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
 import static utils.Utils.loadEmployeesFromCSV;
@@ -104,6 +104,159 @@ public class JavaStreamsTest {
                 .forEach((currency, sum) -> System.out.printf("Sum for group: %s == %s\n", currency, sum));
 
     }
+
+    /*
+        How do you partition a list of integers into even and odd numbers using streams?
+     */
+    @Test
+    void test5() {
+        randomIntList.apply(1, 1000, 30)
+                .stream()
+                //.collect(groupingBy(integer -> integer%2 == 0))
+                .collect(partitioningBy(integer -> integer % 2 == 0))
+                // partitionBy always gives two entries: one when predicate is false, another for true
+                .forEach((isEven, integers) -> System.out.printf("%s Numbers : %s\n", isEven ? "Even" : "Odd", integers));
+    }
+
+    /*
+        Find the MODE of a list. The mode of the list is the item that occurs most often
+     */
+    @Test
+    void test6() {
+
+        // merge multiple lists into a single list
+        List<Integer> ints = Stream.of(
+                        randomIntList.apply(1, 50, 25),
+                        randomIntList.apply(1, 50, 25),
+                        randomIntList.apply(1, 50, 25),
+                        randomIntList.apply(1, 50, 25)
+                ).flatMap(List::stream)
+                //.distinct() // remove duplicates, making all entries modes, and mode = 1
+                .toList();
+
+        System.out.println("Ints:");
+        System.out.println(ints);
+
+        // how many times each entry has occurred in the list
+        Map<Integer, Long> occurrences = ints.stream()
+                .collect(groupingBy(Function.identity(), counting()));
+
+        // find the max number of occurrences
+        Long max = occurrences
+                .entrySet().stream()
+                .peek(System.out::println)
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getValue).orElse(Long.MAX_VALUE);
+
+        // in case of duplicates, find all ties
+        List<Integer> allModes = occurrences.entrySet()
+                .stream()
+                .filter(map -> map.getValue() >= max)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        System.out.println("Mode: " + max);
+        System.out.println("Keys: " + allModes);
+
+    }
+
+    @Test
+    void test6_v2() {
+        List<Integer> ints = Stream.of(
+                randomIntList.apply(1, 50, 25),
+                randomIntList.apply(1, 50, 25),
+                randomIntList.apply(1, 50, 25),
+                randomIntList.apply(1, 50, 25)
+        ).flatMap(List::stream).toList();
+
+        List<Map.Entry<Integer, Long>> sorted = ints.stream()
+                .collect(groupingBy(Function.identity(), counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .toList();
+
+        sorted.forEach(System.out::println);
+
+        Long max = sorted.getFirst().getValue();
+
+        List<Integer> modes = sorted.stream()
+                .filter(integerLongEntry -> integerLongEntry.getValue() == max)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        System.out.println("Mode: " + max);
+        System.out.println("Keys: " + modes);
+
+    }
+
+    /*
+        find the first non-repeated character in a string
+     */
+    @Test
+    void test7() {
+        String result = Arrays.stream("eaaafzabbbccddefffhh".split(""))
+                .sequential()
+                .collect(groupingBy(Function.identity(), counting()))
+                .entrySet().stream()
+                .filter(map -> map.getValue() == 1)
+                .map(Map.Entry::getKey)
+                .findFirst().orElse("not found");
+
+        System.out.println(result);
+    }
+
+    /*
+        sum of squares of all even numbers in a list
+     */
+    @Test
+    void test8() {
+
+        var ints = randomIntList.apply(1, 50, 25);
+        System.out.println(ints);
+
+        var sum = ints.stream().
+                filter(i -> i % 2 == 0)
+                .mapToInt(i -> i * i)
+                .peek(value -> System.out.print(value + ","))
+                .sum();
+
+        System.out.println("\nSUM:");
+        System.out.println(sum);
+    }
+
+    /*
+        Intersection of 2 list
+     */
+    @Test
+    void test10() {
+        List<String> list1 = Arrays.asList("abcde".split(""));
+        List<String> list2 = Arrays.asList("pkcez".split(""));
+
+        HashSet<String> intersection = new HashSet<>(list1);
+        System.out.println("Intersection");
+        intersection.retainAll(list2);
+        System.out.println(intersection);
+    }
+
+    /*
+    Intersection of multiple lists
+ */
+    @Test
+    void test10_v2() {
+        List<String> list1 = Arrays.asList("abcde".split(""));
+        List<String> list2 = Arrays.asList("pkcez".split(""));
+        List<String> list3 = Arrays.asList("deczz".split(""));
+        List<String> list4 = Arrays.asList("electra".split(""));
+
+        List<List<String>> allLists = List.of(list1, list2, list3, list4);
+
+        HashSet<String> intersection = new HashSet<>(allLists.getFirst());
+        allLists.stream().skip(1).forEach(intersection::retainAll);
+
+        System.out.println("Intersection");
+        System.out.println(intersection);
+    }
+
 
 
 }
